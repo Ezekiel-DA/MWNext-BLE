@@ -34,15 +34,15 @@ _lightData.patternID = 0;
 _lightData.hue = 0;
 _lightData.saturation = 255;
 
- // NB: the default of 15 handles (for Characteristics, Descriptors, etc.) is definitely not enough; 30 should do for a bit!
+ // NB: the default of 15 handles (for Characteristics, Descriptors, etc.) is definitely not enough; 60 should do for a bit!
  // NB2: with this change, adding Presentation Format Descriptors would probably not break anymore!
-_service = iServer->createService(_deviceInfo.uuid, 30);
+_service = iServer->createService(_deviceInfo.uuid, 60);
 
 BLECharacteristic* objectName = _service->createCharacteristic((uint16_t)0x2ABE, BLECharacteristic::PROPERTY_READ);
 objectName->setValue(_deviceInfo.name);
 //setCharacteristicPresentationFormat(objectName, BLE2904::FORMAT_UTF8);
 
-auto type = _service->createCharacteristic(MWNEXT_BLE_DEVICE_TYPE_UUID, BLECharacteristic::PROPERTY_READ);
+auto type = _service->createCharacteristic(MWNEXT_BLE_DEVICE_TYPE_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
 uint8_t type_tmp = static_cast<uint8_t>(_deviceInfo.type);
 type->setValue(&type_tmp, 1);
 attachUserDescriptionToCharacteristic(type, "Type");
@@ -117,18 +117,21 @@ void LightService::setHue(uint8_t iHue) {
   _lightData.hue = iHue;
   auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_HUE_CHARACTERISTIC_UUID));
   characteristic->setValue(&_lightData.hue, 1);
+  characteristic->notify();
 }
 
 void LightService::setSaturation(uint8_t iSaturation) {
   _lightData.saturation = iSaturation;
   auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_SATURATION_CHARACTERISTIC_UUID));
   characteristic->setValue(&_lightData.saturation, 1);
+  characteristic->notify();
 }
 
 void LightService::setPatternID(uint8_t iPatternID) {
   _lightData.patternID = iPatternID;
   auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_MODE_CHARACTERISTIC_UUID));
   characteristic->setValue(&iPatternID, 1);
+  characteristic->notify();
 }
 
 void LightService::setCycleColor(bool iCycleColor) {
@@ -136,12 +139,20 @@ void LightService::setCycleColor(bool iCycleColor) {
   uint8_t tempCycleColor = iCycleColor; // because we need to be able to take the address of this value converted to a uint8_t, which neither our input bool or this bitfield will allow
   auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_CYCLE_COLOR_CHARACTERISTIC_UUID));
   characteristic->setValue(&tempCycleColor, 1);
+  characteristic->notify();
 }
 
-// void LightService::stupidUpdate(bool iDeviceConnected) {
-    
-//     _lightData.hue += 2;
-//     characteristic->setValue(&(_lightData.hue), 1);
-//     if (iDeviceConnected)
-//       characteristic->indicate();
-// }
+void LightService::forceBLEUpdate() {
+  // yes, this is very dumb and should be cleaned up
+  setPatternID(_lightData.patternID);
+  
+  if (_deviceInfo.type == MWNEXT_DEVICE_TYPE::RGB_LED) {
+    setHue(_lightData.hue);
+    setSaturation(_lightData.saturation);
+    setCycleColor(_lightData.cycleColor);
+  }
+}
+
+void LightService::debugDump() {
+    Serial.print(_deviceInfo.name.c_str()); Serial.print("\t\t\t cycle: "); Serial.print(_lightData.cycleColor); Serial.print(" - patternID: "); Serial.print(_lightData.patternID); Serial.print(" - hue: "); Serial.print(_lightData.hue); Serial.print(" - Saturation: ");  Serial.println(_lightData.saturation);
+  };

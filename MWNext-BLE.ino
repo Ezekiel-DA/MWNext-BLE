@@ -9,8 +9,10 @@
 using namespace ace_button;
 
 #include "config.h"
+#include "utils.h"
 #include "rfid.h"
 #include "buttons.h"
+#include "BLE.h"
 #include "lightService.h"
 
 bool deviceConnected = false;
@@ -66,11 +68,14 @@ class ServerCallbacks: public BLEServerCallbacks {
   };
 };
 
-MFRC522 rfid(5, UINT8_MAX); // RST pin (NRSTPD on MFRC522) not connected; setting it to this will let the library switch to using soft reset only
+MFRC522 rfid(RFID_READER_CS_PIN, UINT8_MAX); // RST pin (NRSTPD on MFRC522) not connected; setting it to this will let the library switch to using soft reset only
 static LightService* MWNEXTServices [NUM_MWNEXT_BLE_SERVICES];
 
 void setup() {
   Serial.begin(115200);
+
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  digitalWrite(STATUS_LED_PIN, LOW);
   
   setupButtons();
   
@@ -87,8 +92,7 @@ void setup() {
   // manufacturerID->setValue("Team Freyja");
   // devInfoService->start();
 
-  BLEService* costumeControlService = server->createService(MWNEXT_BLE_COSTUME_CONTROL_SERVICE_UUID);
-  costumeControlService->start();
+  createCostumeControlService(server);
 
   Serial.print("Creating "); Serial.print(NUM_MWNEXT_BLE_SERVICES); Serial.println(" MWNEXT services...");
   for (byte i = 0; i < NUM_MWNEXT_BLE_SERVICES; ++i) {
@@ -100,11 +104,11 @@ void setup() {
 
   // advertising: we wanna advertise a service with a fixed "name" (UUID), so that clients can look for this, decide to connect based on that,
   // and then enumerate the other services (one per logical "device" on the costume), which do not need to be advertised.
-  pAdvertising->addServiceUUID((uint16_t)ESP_GATT_UUID_DEVICE_INFO_SVC);
+  // pAdvertising->addServiceUUID((uint16_t)ESP_GATT_UUID_DEVICE_INFO_SVC); // maybe don't advertise a service we disabled. No idea how that worked for a while!
   pAdvertising->addServiceUUID(MWNEXT_BLE_COSTUME_CONTROL_SERVICE_UUID);
   
   pAdvertising->setScanResponse(true);
-  pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue // NLV: what the heck is this? Taken from the ESP32 samples, should probably test what "iPhone issue" it's talking about...
   pAdvertising->setMinPreferred(0x12);
   
   BLEDevice::startAdvertising();
@@ -127,14 +131,17 @@ void readLightSettingsFromTag()
   Serial.print("Data in block #"); Serial.print(MW_RFID_DATA_BLOCK_ADDR); Serial.print(": ");
   dump_byte_array(buffer, 16); Serial.println();
 
-  // TODO apply tag settings to services and characteristics so we can "read" a tag to BLE
+  for (byte i = 0; i < NUM_MWNEXT_BLE_SERVICES; ++i)
+  {
+    memcpy(&(MWNEXTServices[i]->_lightData), &(((LightDataBlock*)buffer)[i]), sizeof(LightDataBlock));
+    MWNEXTServices[i]->debugDump();
+    MWNEXTServices[i]->forceBLEUpdate();
+  }
 }
 
 void loop() {
   checkButtons();
 
-  //MWNEXTServices[0]->setHue((MWNEXTServices[0]->_lightData.hue) + 2);
-  
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
     ReaderSession reader(rfid); // used for automatic cleanup, regardless of errors
 
@@ -145,13 +152,10 @@ void loop() {
     if (rfidWrite)
     {
       writeLightSettingsToTag(rfid, MWNEXTServices);
-    } else // read tag and apply settings
+      pulseStatusLED();
+    } else
     {
       readLightSettingsFromTag();
     }
   }
-
-  //MWNEXTServices[1]->setSaturation((MWNEXTServices[0]->_lightData.saturation) - 2);
- 
-  delay(2000);
 }

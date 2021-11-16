@@ -37,4 +37,9 @@ public:
   void setSaturation(uint8_t iSaturation);
   void setPatternID(uint8_t iPatternID);
   void setCycleColor(bool iCycleColor);
+
+  // used after unstreaming a tag, to force notification of new values, since unstream is done via memcpy and not the above setters!
+  void forceBLEUpdate();
+
+  void debugDump();
 };

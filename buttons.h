@@ -14,9 +14,11 @@ void rfidButtonEventHandler(AceButton* button, uint8_t eventType, uint8_t button
   {
     case AceButton::kEventPressed:
       rfidWrite = true;
+      digitalWrite(STATUS_LED_PIN, HIGH);
       break;
     case AceButton::kEventReleased:
       rfidWrite = false;
+      digitalWrite(STATUS_LED_PIN, LOW);
       break;
   }
 }
