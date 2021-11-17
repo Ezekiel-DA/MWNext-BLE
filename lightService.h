@@ -24,8 +24,6 @@ private:
   MWNEXTDeviceInfo _deviceInfo;
   BLEService* _service = nullptr;
 
-  BLECharacteristic* getCharacteristicByUUID(BLEUUID iCharacteristicID);
-
 public:
   LightDataBlock _lightData;
 

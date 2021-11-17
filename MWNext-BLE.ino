@@ -13,6 +13,7 @@ using namespace ace_button;
 #include "rfid.h"
 #include "buttons.h"
 #include "BLE.h"
+#include "CostumeControllerService.h"
 #include "lightService.h"
 
 bool deviceConnected = false;
@@ -25,6 +26,8 @@ MWNEXTDeviceInfo MWNEXTDevices[] = {
   {.type=MWNEXT_DEVICE_TYPE::ONOFF_PORT,  .uuid=(BLEUUID)MWNEXT_BLE_STARS_SERVICE_UUID,    .name="Stars"}
 };
 const uint8_t NUM_MWNEXT_BLE_SERVICES = sizeof(MWNEXTDevices) / sizeof(MWNEXTDeviceInfo);
+
+CostumeControlService* costumeController = nullptr;
 
 void writeLightSettingsToTag(MFRC522& reader, LightService* lightServices[])
 {
@@ -92,7 +95,7 @@ void setup() {
   // manufacturerID->setValue("Team Freyja");
   // devInfoService->start();
 
-  createCostumeControlService(server);
+  costumeController = new CostumeControlService(server);
 
   Serial.print("Creating "); Serial.print(NUM_MWNEXT_BLE_SERVICES); Serial.println(" MWNEXT services...");
   for (byte i = 0; i < NUM_MWNEXT_BLE_SERVICES; ++i) {
@@ -149,13 +152,28 @@ void loop() {
     if (!checkCompatibleTag(rfid))
       return;
 
-    if (rfidWrite)
-    {
-      writeLightSettingsToTag(rfid, MWNEXTServices);
-      pulseStatusLED();
-    } else
-    {
-      readLightSettingsFromTag();
+    costumeController->setTagPresent(true);
+
+    readLightSettingsFromTag();
+  
+  } else if (tryWakeExistingCard(rfid)) {
+    ReaderSession reader(rfid); // used for automatic cleanup, regardless of errors
+
+    if (rfid.PICC_ReadCardSerial()) {
+      // check if we've been asked to write
+      if (costumeController->getTagWriteRequest()) {
+        // TODO: any error handling at all here >.<
+        // More precisely: probably try to catch write RFID write errors in writeLightSettingsToTag,
+        // then set the Tag Write Error characteristic to non 0 if we errored out (AFTER setting Tag Write Request back to 0 in all cases, to signal completion, even if failure)
+        // Then it's up to the client to clear the error from their end; we should probably be checking that there isn't an active error before allowing a write, too, but since we don't even set errors right now...
+        writeLightSettingsToTag(rfid, MWNEXTServices);
+        pulseStatusLED();
+        costumeController->clearWriteRequest();
+      }
+    } else {
+      Serial.println("ERROR: woke a card but failed to read it?");
     }
+  } else {
+    costumeController->setTagPresent(false);
   }
 }

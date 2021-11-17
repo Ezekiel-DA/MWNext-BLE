@@ -86,3 +86,18 @@ public:
     _reader.PCD_StopCrypto1();
   };
 };
+
+bool tryWakeExistingCard(MFRC522& reader) {
+  byte bufferATQA[2];
+	byte bufferSize = sizeof(bufferATQA);
+
+  // Should we do this for a wakeup?
+	// // Reset baud rates
+	// PCD_WriteRegister(TxModeReg, 0x00);
+	// PCD_WriteRegister(RxModeReg, 0x00);
+	// // Reset ModWidthReg
+	// PCD_WriteRegister(ModWidthReg, 0x26);
+
+  MFRC522::StatusCode res = reader.PICC_WakeupA(bufferATQA, &bufferSize);
+  return (res == MFRC522::STATUS_OK || res == MFRC522::STATUS_COLLISION);
+};

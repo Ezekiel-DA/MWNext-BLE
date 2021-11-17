@@ -4,29 +4,7 @@
 #include <BLE2904.h>
 #include <BLE2902.h>
 
-/**
- * Create a new BLE Descriptor with the 0x2901 UUID (i.e. "Characteristic User Description"), set it to the provided name, and attach it to the given BLE Characteristic.
- * Note: to save on memory, names should not exceed 15 characters.
- */
-void attachUserDescriptionToCharacteristic(BLECharacteristic* iCharacteristic, const std::string& iName) {
-  BLEDescriptor* descriptor = new BLEDescriptor((uint16_t)ESP_GATT_UUID_CHAR_DESCRIPTION, 15);
-  descriptor->setValue(iName);
-
-  iCharacteristic->addDescriptor(descriptor);
-}
-
-/**
- * DO NOT USE. This seems to break characteristics / services it's applied to? I guess I'm using it incorrectly, but I'm not sure why at this point.
- * Set various formatting information for a characteristic, via the Characteristic Presentation Format Descriptor (UUID: 0x2904).
- * Right now, only supports setting a type; the constants for this can be found in BLE2904.h from arduino-esp32
- */
-void setCharacteristicPresentationFormat(BLECharacteristic* iCharacteristic, uint8_t iType) {
-  BLE2904* characteristicPresentationFormatDescriptor = new BLE2904();
-  characteristicPresentationFormatDescriptor->setFormat(iType);
-  characteristicPresentationFormatDescriptor->setNamespace(1); // mandatory? 1 = Bluetooth SIG Assigned Numbers
-  characteristicPresentationFormatDescriptor->setUnit(0x2700); // unitless
-  iCharacteristic->addDescriptor(characteristicPresentationFormatDescriptor);
-}
+#include "BLE.h"
 
 LightService::LightService(BLEServer* iServer, MWNEXTDeviceInfo& iDeviceInfo) : _deviceInfo(iDeviceInfo) {
 _lightData.cycleColor = 0;
@@ -86,50 +64,45 @@ void LightService::onWrite(BLECharacteristic* characteristic) {
     BLEUUID id = characteristic->getUUID();
     uint8_t* val = characteristic->getData();
 
-    Serial.print("Got new value from central for Service "); Serial.print(this->_deviceInfo.name.c_str()); Serial.print(" for characteristic ");
+    // Reminder: we intentionally bypass the setters here, since they would cause a BLE notify, but these values just came from a BLE write
+
+    // Serial.print("Got new value from central for Service "); Serial.print(this->_deviceInfo.name.c_str()); Serial.print(" for characteristic ");
     if (id.equals(std::string(MWNEXT_BLE_HUE_CHARACTERISTIC_UUID))) {
-        Serial.print("Hue");
+        // Serial.print("Hue");
         this->_lightData.hue = (uint8_t) *val;
     } else if (id.equals(std::string(MWNEXT_BLE_CYCLE_COLOR_CHARACTERISTIC_UUID))) {
-        Serial.print("Cycle Color");
+        // Serial.print("Cycle Color");
         this->_lightData.cycleColor = (bool) *val;
     } else if (id.equals(std::string(MWNEXT_BLE_MODE_CHARACTERISTIC_UUID))) {
-        Serial.print("Mode");
+        // Serial.print("Mode");
         this->_lightData.patternID = *val;
     } else if (id.equals(std::string(MWNEXT_BLE_SATURATION_CHARACTERISTIC_UUID))) {
-        Serial.print("Saturation");
+        // Serial.print("Saturation");
         this->_lightData.saturation = *val;
     } else {
         Serial.print("Unrecognized characteristic!!!");
     }
 
-    Serial.print(": "); Serial.println(*val);
-}
-
-BLECharacteristic* LightService::getCharacteristicByUUID(BLEUUID iCharacteristicID) {
-  assert(_service);
-  auto characteristic = _service->getCharacteristic(iCharacteristicID);
-  assert(characteristic);
-  return characteristic;
+    // Serial.print(": "); Serial.println(*val);
 }
 
 void LightService::setHue(uint8_t iHue) {
   _lightData.hue = iHue;
-  auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_HUE_CHARACTERISTIC_UUID));
+  auto characteristic = getCharacteristicByUUID(_service, BLEUUID(MWNEXT_BLE_HUE_CHARACTERISTIC_UUID));
   characteristic->setValue(&_lightData.hue, 1);
   characteristic->notify();
 }
 
 void LightService::setSaturation(uint8_t iSaturation) {
   _lightData.saturation = iSaturation;
-  auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_SATURATION_CHARACTERISTIC_UUID));
+  auto characteristic = getCharacteristicByUUID(_service, BLEUUID(MWNEXT_BLE_SATURATION_CHARACTERISTIC_UUID));
   characteristic->setValue(&_lightData.saturation, 1);
   characteristic->notify();
 }
 
 void LightService::setPatternID(uint8_t iPatternID) {
   _lightData.patternID = iPatternID;
-  auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_MODE_CHARACTERISTIC_UUID));
+  auto characteristic = getCharacteristicByUUID(_service, BLEUUID(MWNEXT_BLE_MODE_CHARACTERISTIC_UUID));
   characteristic->setValue(&iPatternID, 1);
   characteristic->notify();
 }
@@ -137,13 +110,13 @@ void LightService::setPatternID(uint8_t iPatternID) {
 void LightService::setCycleColor(bool iCycleColor) {
   _lightData.cycleColor = iCycleColor;
   uint8_t tempCycleColor = iCycleColor; // because we need to be able to take the address of this value converted to a uint8_t, which neither our input bool or this bitfield will allow
-  auto characteristic = getCharacteristicByUUID(BLEUUID(MWNEXT_BLE_CYCLE_COLOR_CHARACTERISTIC_UUID));
+  auto characteristic = getCharacteristicByUUID(_service, BLEUUID(MWNEXT_BLE_CYCLE_COLOR_CHARACTERISTIC_UUID));
   characteristic->setValue(&tempCycleColor, 1);
   characteristic->notify();
 }
 
 void LightService::forceBLEUpdate() {
-  // yes, this is very dumb and should be cleaned up
+  // yes, this is very dumb and should be cleaned up; we should probably unserialize tags in a way that calls the setters, instead
   setPatternID(_lightData.patternID);
   
   if (_deviceInfo.type == MWNEXT_DEVICE_TYPE::RGB_LED) {

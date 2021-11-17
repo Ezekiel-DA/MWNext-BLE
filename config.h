@@ -37,3 +37,8 @@ enum struct MWNEXT_DEVICE_TYPE {
   MONO_LED,
   ONOFF_PORT
 };
+
+enum struct MWNEXT_WRITE_REQUEST_ERROR {
+  MFRC522_ERROR = 1,
+  NO_TAG,
+};
