@@ -2,6 +2,8 @@
 
 #include <MFRC522.h>
 
+#include "lightService.h"
+
 MFRC522::MIFARE_Key mifareDefaultKey = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 void printHex(byte *buffer, byte bufferSize) {
@@ -92,12 +94,63 @@ bool tryWakeExistingCard(MFRC522& reader) {
 	byte bufferSize = sizeof(bufferATQA);
 
   // Should we do this for a wakeup?
-	// // Reset baud rates
-	// PCD_WriteRegister(TxModeReg, 0x00);
-	// PCD_WriteRegister(RxModeReg, 0x00);
-	// // Reset ModWidthReg
-	// PCD_WriteRegister(ModWidthReg, 0x26);
+	// Reset baud rates
+	reader.PCD_WriteRegister(reader.TxModeReg, 0x00);
+	reader.PCD_WriteRegister(reader.RxModeReg, 0x00);
+	// Reset ModWidthReg
+	reader.PCD_WriteRegister(reader.ModWidthReg, 0x26);
 
   MFRC522::StatusCode res = reader.PICC_WakeupA(bufferATQA, &bufferSize);
   return (res == MFRC522::STATUS_OK || res == MFRC522::STATUS_COLLISION);
 };
+
+void writeLightSettingsToTag(MFRC522& reader, LightService* lightServices[], const uint8_t& iNumLightServices)
+{
+  // reserve space for 5 lights
+  // - each light is encoded over 3 bytes, so up to 5 lights per block on a MiFare Classic PICC
+  byte lightsDataBuffer[16];
+  memset(lightsDataBuffer, 0, sizeof(lightsDataBuffer));
+  lightsDataBuffer[15] = 0xFF;
+
+  for (byte idx = 0; idx < iNumLightServices; ++idx)
+  {
+    memcpy(lightsDataBuffer + (idx*3), &(lightServices[idx]->_lightData), 3);
+  }
+  
+  Serial.println("Writing data to tag...");
+  dump_byte_array(lightsDataBuffer, 16); Serial.println();  
+  
+  MFRC522::StatusCode ret = writeBlock(reader, MW_RFID_DATA_BLOCK_ADDR, lightsDataBuffer);
+  if (ret != MFRC522::STATUS_OK)
+  {
+    Serial.print(F("Internal failure while writing to tag: "));
+    Serial.println(reader.GetStatusCodeName(ret));
+    return;
+  }
+
+  Serial.println("Wrote lights data to tag.");
+};
+
+void readLightSettingsFromTag(MFRC522& reader, LightService* lightServices[], const uint8_t& iNumLightServices)
+{
+  byte buffer[18]; // minimum of 16 (size of a block) + 2 (CRC)
+  byte size = sizeof(buffer);
+  
+  MFRC522::StatusCode ret = readBlock(reader, MW_RFID_DATA_BLOCK_ADDR, buffer, &size);
+  if (ret != MFRC522::STATUS_OK)
+  {
+    Serial.print(F("Internal failure in RFID reader: "));
+    Serial.print(reader.GetStatusCodeName(ret)); Serial.print(" while reading block #"); Serial.println(MW_RFID_DATA_BLOCK_ADDR);
+    return;
+  }
+
+  Serial.print("Data in block #"); Serial.print(MW_RFID_DATA_BLOCK_ADDR); Serial.print(": ");
+  dump_byte_array(buffer, 16); Serial.println();
+
+  for (byte i = 0; i < iNumLightServices; ++i)
+  {
+    memcpy(&(lightServices[i]->_lightData), &(((LightDataBlock*)buffer)[i]), sizeof(LightDataBlock));
+    lightServices[i]->debugDump();
+    lightServices[i]->forceBLEUpdate();
+  }
+}

@@ -1,5 +1,6 @@
 #include "BLE.h"
 
+#include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
@@ -28,4 +29,15 @@ BLECharacteristic* getCharacteristicByUUID(BLEService* iService, BLEUUID iCharac
   auto characteristic = iService->getCharacteristic(iCharacteristicID);
   assert(characteristic);
   return characteristic;
+}
+
+void ServerCallbacks::onConnect(BLEServer* server) {
+  deviceConnected = true;
+  Serial.println("Central connected. Start sending updates.");
+}
+
+void ServerCallbacks::onDisconnect(BLEServer* server) {
+  deviceConnected = false;
+  Serial.println("Central disconnected; Advertising again...");
+  BLEDevice::startAdvertising();
 }

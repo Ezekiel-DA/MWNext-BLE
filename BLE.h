@@ -2,9 +2,13 @@
 
 #include <string>
 
+#include <BLEServer.h>
+
 class BLECharacteristic;
 class BLEService;
 class BLEUUID;
+
+static bool deviceConnected = false;
 
 /**
  * Create a new BLE Descriptor with the 0x2901 UUID (i.e. "Characteristic User Description"), set it to the provided name, and attach it to the given BLE Characteristic.
@@ -20,3 +24,9 @@ void attachUserDescriptionToCharacteristic(BLECharacteristic* iCharacteristic, c
 void setCharacteristicPresentationFormat(BLECharacteristic* iCharacteristic, uint8_t iType);
 
 BLECharacteristic* getCharacteristicByUUID(BLEService* iService, BLEUUID iCharacteristicID);
+
+
+class ServerCallbacks: public BLEServerCallbacks {
+  void onConnect(BLEServer* server);
+  void onDisconnect(BLEServer* server);
+};
