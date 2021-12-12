@@ -8,7 +8,6 @@
 
 struct MWNEXTDeviceInfo {
   MWNEXT_DEVICE_TYPE type;
-  BLEUUID uuid;
   std::string name;
 };
 

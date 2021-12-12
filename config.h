@@ -20,6 +20,9 @@
 #define MWNEXT_BLE_MOAT_SERVICE_UUID                      "5180f077-a430-4a6d-b6ea-cdf1075a0dd9"
 #define MWNEXT_BLE_STARS_SERVICE_UUID                     "c634d6bf-0f7b-4580-b342-7aa2d42dedab"
 
+// replacement single service for controlling light devices
+#define MWNEXT_BLE_LIGHT_DEVICE_SERVICE_UUID              "0ba35e90-f55f-4f15-9347-3dc4a0287881"
+
 // characteristics for our light controlling services 
 #define MWNEXT_BLE_DEVICE_TYPE_CHARACTERISTIC_UUID        "8106f98f-fb24-4b97-a995-47a1695cea75"
 #define MWNEXT_BLE_MODE_CHARACTERISTIC_UUID               "b54fc13b-4374-4a6f-861f-dd198f88f299"

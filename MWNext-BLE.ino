@@ -17,11 +17,11 @@ using namespace ace_button;
 #include "lightService.h"
 
 MWNEXTDeviceInfo MWNEXTDevices[] = {
-  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,     .uuid=(BLEUUID)MWNEXT_BLE_WINDOWS_SERVICE_UUID,  .name="Windows"},
-  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,     .uuid=(BLEUUID)MWNEXT_BLE_CLOUDS_SERVICE_UUID,   .name="Clouds"},
-  {.type=MWNEXT_DEVICE_TYPE::MONO_LED,    .uuid=(BLEUUID)MWNEXT_BLE_WALLS_SERVICE_UUID,    .name="Walls"},
-  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,     .uuid=(BLEUUID)MWNEXT_BLE_MOAT_SERVICE_UUID,     .name="Moat"},
-  {.type=MWNEXT_DEVICE_TYPE::ONOFF_PORT,  .uuid=(BLEUUID)MWNEXT_BLE_STARS_SERVICE_UUID,    .name="Stars"}
+  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,    .name="Windows"},
+  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,    .name="Clouds"},
+  {.type=MWNEXT_DEVICE_TYPE::MONO_LED,   .name="Walls"},
+  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,    .name="Moat"},
+  {.type=MWNEXT_DEVICE_TYPE::ONOFF_PORT, .name="Stars"}
 };
 const uint8_t NUM_MWNEXT_BLE_SERVICES = sizeof(MWNEXTDevices) / sizeof(MWNEXTDeviceInfo);
 
