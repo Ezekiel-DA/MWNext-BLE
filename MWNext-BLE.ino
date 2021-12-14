@@ -16,12 +16,17 @@ using namespace ace_button;
 #include "CostumeControllerService.h"
 #include "lightService.h"
 
+// CAPABILITY_COLOR      
+// CAPABILITY_PATTERN    
+// CAPABILITY_PWM        
+// CAPABILITY_ADDRESSABLE
+
 MWNEXTDeviceInfo MWNEXTDevices[] = {
-  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,    .name="Windows"},
-  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,    .name="Clouds"},
-  {.type=MWNEXT_DEVICE_TYPE::MONO_LED,   .name="Walls"},
-  {.type=MWNEXT_DEVICE_TYPE::RGB_LED,    .name="Moat"},
-  {.type=MWNEXT_DEVICE_TYPE::ONOFF_PORT, .name="Stars"}
+  {.name="Windows", .deviceId=1, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE },
+  {.name="Clouds",  .deviceId=2, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE },
+  {.name="Walls",   .deviceId=3, .capabilities= CAPABILITY_PATTERN | CAPABILITY_PWM },
+  {.name="Moat",    .deviceId=4, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE },
+  {.name="Stars",   .deviceId=5, .capabilities= CAPABILITY_PATTERN } // do we want to set caps to null here? i.e. on/off only, not even patterns?
 };
 const uint8_t NUM_MWNEXT_BLE_SERVICES = sizeof(MWNEXTDevices) / sizeof(MWNEXTDeviceInfo);
 

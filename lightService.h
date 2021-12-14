@@ -1,21 +1,34 @@
 #pragma once
 
+#include <bitset>
+
 #include <BLEDevice.h>
 #include <BLEUtils.h>
 #include <BLEServer.h>
 
 #include "config.h"
 
+constexpr std::bitset<8> CAPABILITY_COLOR       {	1 << 0 }; // 0000 0001
+constexpr std::bitset<8> CAPABILITY_PATTERN     {	1 << 1 }; // 0000 0010
+constexpr std::bitset<8> CAPABILITY_PWM         {	1 << 2 }; // 0000 0100
+constexpr std::bitset<8> CAPABILITY_ADDRESSABLE {	1 << 3 }; // 0000 1000
+
+// static information about a device, to be set at build time (code build time as well as costume build time)
 struct MWNEXTDeviceInfo {
-  MWNEXT_DEVICE_TYPE type;
   std::string name;
+  uint8_t deviceId;
+  std::bitset<8> capabilities;  
 };
 
+// dynamic information about a light device
 struct LightDataBlock {
   uint8_t cycleColor : 1;
-  uint8_t patternID : 7; // max 128 patterns, wich should be more than fine!
+  uint8_t state : 1; // on / off
+  uint8_t reserved : 1; // for future use
+  uint8_t patternID : 5; // max 32 patterns, wich should be more than fine!
   uint8_t hue;
   uint8_t saturation;
+  uint8_t value;
 };
 
 class LightService : public BLECharacteristicCallbacks {

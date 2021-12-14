@@ -7,7 +7,7 @@ This is intended to serve as a building block for MWNEXT.
 A companion iOS app interfaces with the BLE Peripheral created by the ESP32 and reads/writes the protocol below.
 
 
-## Protocol
+## V2.0.0 Protocol
 The ESP32 acts as a BLE Device, exposing the below Services and Characteristics. All long form UUIDs are custom defined services / characteristics; all short identifier are Bluetooth SIG defined. See `config.h` for exact UUIDs.
 
 The ESP32 advertises one / two services:
@@ -20,18 +20,30 @@ The ESP32 advertises one / two services:
 See _Tag writing process_ below for more.
 
 
-The ESP32 also offers one custom service per device on the costume, allowing actual control. These are not advertised, Centrals (clients) are expected to look for the Costume Control Service to find the ESP32, then hardcode the UUIDs of the services to be controlled. In the future, it may be wise to have each device expose the same custom service ("Costume Device Service"?), since multiple instances of a given service UUID are possible in BLE?
+The ESP32 also offers one **instance** of a custom service per device on the costume, allowing actual control. These are not advertised; Centrals (clients) are expected to look for the Costume Control Service to find the ESP32, then query for instances of the Light Device Service.
 
-Currently though, clients should query services by their known UUIDs, then, for each, query all characteristics and decide how to control each device based on what characteristics are present. Possible characteristics are:
+### Light Device
+
+For each instance of this service, Centrals should query all characteristics and decide how to control each device based on the _Capabilities_ characteristic, and what other characteristics are present. Possible characteristics are:
   - Object Name (`0x2ABE`): `<a friendly name for the object>`. Read only.
-  - Type: a single `uint8_t` representing the device type; slightly, but not completely, redundant with whether or not color controlling characteristics are present. To be cleaned up. Read only.
-  - Mode: a single `uint8_t`; 0 to mean OFF, 1+ to be some sort of animation. Read, write, notify and indicate.
+  - ~~Type: a single `uint8_t` representing the device type; slightly, but not completely, redundant with whether or not color controlling characteristics are present. To be cleaned up. Read only.~~ DEPRECATED in V2.0.0
+  - Capabilities: a single `uint8_t` bitfield representing what the light device can do. Read only.
+  - ID: a single `uint8_t` representing a sequential ID for the device. To be set statically when defining the costume; used by Centrals for presentation purposes, e.g. to determine in what order to show devices in UI. Read only.
+  - State: a boolean (coded as a single `uint8_t` as far as BLE is concerned) indicating whether this specific device is ON or OFF. Read, write, notify and indicate.
+  - Mode: a single `uint8_t`; 0 for steady, 1+ for some sort of animation (V1.0.0, DEPRECATED: 0 to mean OFF, 1+ to be some sort of animation). Read, write, notify and indicate.
   - Hue: a single `uint8_t` color value; present if object supports colors. Read, write, notify and indicate.
-  - Saturation: a single `uint8_t` light power value; present only if object supports colors. Read, write, notify and indicate.
+  - Saturation: a single `uint8_t` light saturation value; present only if object supports colors. 255 is fully saturated color; 0 turns any hue to white. Read, write, notify and indicate.
+  - Value: a single `uint8_t` light power value. Read, write, notify, indicate.
   - CycleColor: a boolean (coded as a single `uint8_t` as far as BLE is concerned) valid indicating whether or not colors are cycling; present only if object supports colors.  Read, write, notify and indicate.
+
+
+TODO: how to model devices with __addressable__ capability? Number or LEDs? Physical configuration? (line, matrix, circle, etc.?)
+
 
 See `config.h` for values and enums etc. See `Ezekiel-DA/MWNext-BLE-remote-ios` for sample implementation of client app.
 
+### Motor Control Device?
+TODO
 
 ### Tag writing process
 - When a tag is presented, it will initially be read (updating settings on the client)*
