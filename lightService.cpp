@@ -14,9 +14,9 @@ LightService::LightService(BLEServer* iServer, MWNEXTDeviceInfo& iDeviceInfo) : 
   _lightData.hue = 0;
   _lightData.saturation = 255;
 
-  // NB: the default of 15 handles (for Characteristics, Descriptors, etc.) is definitely not enough; 60 should do for a bit!
+  // NB: the default of 15 handles (for Characteristics, Descriptors, etc.) is definitely not enough; hopefully this should do for a bit!
   // NB2: with this change, adding Presentation Format Descriptors would probably not break anymore!
-  _service = iServer->createService(BLEUUID(MWNEXT_BLE_LIGHT_DEVICE_SERVICE_UUID), 60, instId++);
+  _service = iServer->createService(BLEUUID(MWNEXT_BLE_LIGHT_DEVICE_SERVICE_UUID), 100, instId++);
 
   auto objectName = _service->createCharacteristic((uint16_t)0x2ABE, BLECharacteristic::PROPERTY_READ);
   objectName->setValue(_deviceInfo.name);
@@ -82,9 +82,26 @@ LightService::LightService(BLEServer* iServer, MWNEXTDeviceInfo& iDeviceInfo) : 
     value->addDescriptor(new BLE2902());
   }
 
+  if ((_deviceInfo.capabilities & CAPABILITY_ADDRESSABLE).any()) {   
+    auto shapeH = _service->createCharacteristic(MWNEXT_BLE_ADDRESSABLE_SHAPE_HORIZONTAL_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+    shapeH->setValue(_deviceInfo.shapeH);
+    attachUserDescriptionToCharacteristic(shapeH, "H. shape");
+
+    auto shapeV = _service->createCharacteristic(MWNEXT_BLE_ADDRESSABLE_SHAPE_VERTICAL_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ);
+    shapeV->setValue(_deviceInfo.shapeV);
+    attachUserDescriptionToCharacteristic(shapeV, "V. shape");
+
+    // auto value = _service->createCharacteristic(MWNEXT_BLE_ADDRESSABLE_DATA_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_INDICATE);
+    // value->setCallbacks(this);
+    // value->setValue(&_lightData.value, 1);
+    // attachUserDescriptionToCharacteristic(value, "Value");
+    // // setCharacteristicPresentationFormat(saturation, BLE2904::FORMAT_UINT8);
+    // value->addDescriptor(new BLE2902());
+  }
+
   _service->start();
 };
-  
+
 void LightService::onWrite(BLECharacteristic* characteristic) {
     BLEUUID id = characteristic->getUUID();
     uint8_t* val = characteristic->getData();

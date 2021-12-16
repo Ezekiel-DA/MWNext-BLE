@@ -17,11 +17,13 @@ constexpr std::bitset<8> CAPABILITY_ADDRESSABLE {	1 << 3 }; // 0000 1000
 struct MWNEXTDeviceInfo {
   std::string name;
   uint8_t deviceId;
-  std::bitset<8> capabilities;  
+  uint16_t shapeH;
+  uint16_t shapeV;
+  std::bitset<8> capabilities;
 };
 
 // dynamic information about a light device
-struct LightDataBlock {
+struct LightData {
   uint8_t cycleColor : 1;
   uint8_t state : 1; // on / off
   uint8_t reserved : 1; // for future use
@@ -37,7 +39,9 @@ private:
   BLEService* _service = nullptr;
 
 public:
-  LightDataBlock _lightData;
+  LightData _lightData;
+
+  // TODO store addressable light data buffer? somehow?
 
   LightService(BLEServer* iServer, MWNEXTDeviceInfo& iDeviceInfo);
   

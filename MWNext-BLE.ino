@@ -22,11 +22,11 @@ using namespace ace_button;
 // CAPABILITY_ADDRESSABLE
 
 MWNEXTDeviceInfo MWNEXTDevices[] = {
-  {.name="Windows", .deviceId=1, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE },
-  {.name="Clouds",  .deviceId=2, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE },
-  {.name="Walls",   .deviceId=3, .capabilities= CAPABILITY_PATTERN | CAPABILITY_PWM },
-  {.name="Moat",    .deviceId=4, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE },
-  {.name="Stars",   .deviceId=5, .capabilities= CAPABILITY_PATTERN } // do we want to set caps to null here? i.e. on/off only, not even patterns?
+  {.name="Windows", .deviceId=1, .shapeH=7,   .shapeV=1, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE},
+  {.name="Clouds",  .deviceId=2, .shapeH=100, .shapeV=1, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE},
+  {.name="Walls",   .deviceId=3, .shapeH=0,   .shapeV=0, .capabilities= CAPABILITY_PATTERN | CAPABILITY_PWM},
+  {.name="Moat",    .deviceId=4, .shapeH=20,  .shapeV=1, .capabilities= CAPABILITY_COLOR | CAPABILITY_PATTERN | CAPABILITY_PWM | CAPABILITY_ADDRESSABLE},
+  {.name="Stars",   .deviceId=5, .shapeH=0,   .shapeV=0, .capabilities= CAPABILITY_PATTERN} // do we want to set caps to null here? i.e. on/off only, not even patterns?
 };
 const uint8_t NUM_MWNEXT_BLE_SERVICES = sizeof(MWNEXTDevices) / sizeof(MWNEXTDeviceInfo);
 

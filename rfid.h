@@ -149,7 +149,7 @@ void readLightSettingsFromTag(MFRC522& reader, LightService* lightServices[], co
 
   for (byte i = 0; i < iNumLightServices; ++i)
   {
-    memcpy(&(lightServices[i]->_lightData), &(((LightDataBlock*)buffer)[i]), sizeof(LightDataBlock));
+    memcpy(&(lightServices[i]->_lightData), &(((LightData*)buffer)[i]), sizeof(LightData));
     lightServices[i]->debugDump();
     lightServices[i]->forceBLEUpdate();
   }

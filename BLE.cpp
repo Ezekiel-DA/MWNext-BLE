@@ -10,6 +10,7 @@
 #include "config.h"
 
 void attachUserDescriptionToCharacteristic(BLECharacteristic* iCharacteristic, const std::string& iName) {
+  assert(iName.length() < 15); // enforce the limit below, because otherwise things break in annoying, hard to debug ways, if you forget about this limit...
   BLEDescriptor* descriptor = new BLEDescriptor((uint16_t)ESP_GATT_UUID_CHAR_DESCRIPTION, 15);
   descriptor->setValue(iName);
 
